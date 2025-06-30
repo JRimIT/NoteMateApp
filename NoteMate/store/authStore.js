@@ -93,15 +93,16 @@ export const useAuthStore = create((set) => ({
         //     console.error("Check auth error:", error);
         //     set({ isLoading: false });
         // }
-
+        set({ isLoading: true });
         try {
             const userJson = await AsyncStorage.getItem("user");
             const token = await AsyncStorage.getItem("token");
             const user = userJson ? JSON.parse(userJson) : null;
 
-            set({ token, user })
+            set({ token, user, isLoading: false })
         } catch (error) {
             console.error("Check auth error:", error);
+            set({ isLoading: false });
         } finally {
             set({ isCheckingAuth: false });
         }

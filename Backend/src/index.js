@@ -4,6 +4,7 @@ import cors from 'cors';
 
 import authRoutes from './routes/authRoutes.js'
 import bookRoutes from './routes/bookRoutes.js'
+import aiRoutes from './routes/aiRoutes.js'
 
 import dotenv from 'dotenv';
 import { connectToMongoDB } from './lib/db.js';
@@ -20,6 +21,8 @@ app.use(cors())
 
 app.use('/api/auth', authRoutes)
 app.use('/api/books', bookRoutes)
+app.use('/api/AI', aiRoutes)
+
 
 const port = 3000;
 app.listen(port, () => {

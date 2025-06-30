@@ -198,7 +198,7 @@ const Create = () => {
               </View>
             </View>
             {/* Rating */}
-            <View style={styles.formGroup}>
+            <View style={styles.ratingContainer}>
               <Text style={styles.label}>Rating</Text>
               <View style={styles.inputContainer}>
                 {renderRatingPicker(rating)}
@@ -245,6 +245,7 @@ const Create = () => {
                   value={caption}
                   onChangeText={setCaption}
                   multiline
+                  
                 />
               
             </View> 

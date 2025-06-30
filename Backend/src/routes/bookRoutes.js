@@ -44,7 +44,7 @@ router.post('/', protectRoute, async (req, res) => {
 
     } catch (error) {
         console.error("Error adding book:", error);
-        res.status(500).json({ message: error.message || "Internal server error loi do" });
+        res.status(500).json({ message: error.message, error: error || "Internal server error loi do" });
     }
 })
 

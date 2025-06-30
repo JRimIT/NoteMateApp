@@ -24,12 +24,15 @@ const protectRoute = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findById(decoded.userId).select('-password');
 
+        console.log("decoded: ", decoded);
+
+
         req.user = user;
         next();
 
     } catch (error) {
-        console.error("Authentication error:", error);
-        return res.status(401).json({ message: "Unauthorized" });
+        console.error("Authentication error:", error.message);
+        return res.status(401).json({ message: error.message });
     }
 }
 

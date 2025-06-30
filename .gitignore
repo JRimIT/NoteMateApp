@@ -1,0 +1,40 @@
+# Ignore node_modules in both NoteMate and Backend
+NoteMate/node_modules/
+Backend/node_modules/
+
+# Expo
+NoteMate/.expo/
+NoteMate/dist/
+NoteMate/web-build/
+NoteMate/expo-env.d.ts
+
+# Native
+NoteMate/.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Metro
+NoteMate/.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+*.pem
+
+# local env files in both folders
+NoteMate/.env*.local
+Backend/.env*.local
+
+# Ignore all .env files globally
+**/.env
+
+# typescript
+*.tsbuildinfo

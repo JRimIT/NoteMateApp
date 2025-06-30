@@ -64,7 +64,7 @@ const Profile = () => {
           <Ionicons 
             key={i}
             name={i <= rating ? "star" : "star-outline"}
-            size={32}
+            size={22}
             color={i <= rating ? "#f4b400" : COLORS.textSecondary}
             
             />
@@ -173,7 +173,7 @@ const Profile = () => {
 
         <FlatList
           data={books}
-          keyExtractor={(item) => item._id}
+          keyExtractor={(item : any) => item._id}
           renderItem={renderBookItem}
           contentContainerStyle={styles.booksList}
           showsVerticalScrollIndicator={false}

@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, FlatList, Image, ActivityIndicator, RefreshControl } from 'react-native'
+import { View, Text, TouchableOpacity, FlatList, Image, ActivityIndicator, RefreshControl, Alert } from 'react-native'
 import React, { use, useEffect, useState } from 'react'
 import { Ionicons } from '@expo/vector-icons'
 import { useAuthStore } from '../../store/authStore'
@@ -8,9 +8,13 @@ import { formatPublishDate } from '../../lib/utils'
 import COLORS from '../../constants/colors'
 import Loader from '../../components/Loader'
 
+import { useRouter } from 'expo-router'
+
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 const Home = () => {
+  const router = useRouter()
+
   const {logout, token} = useAuthStore()
   const [books, setBooks] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -106,11 +110,17 @@ const Home = () => {
   
       setHasMore(pageNumber < data.totalPages)
       setPage(pageNumber)
-    } catch (error) {
+    } catch (error : any) {
       console.error('Error fetching books:', error)
-      if (error instanceof Error) {
-        alert(error.message)
-      } else {
+     
+
+      if (error.message === 'jwt expired' ) {
+        logout()
+        Alert.alert("ERROR",error.message)
+      }else if(error.message === 'jwt malformed' ) {
+        logout()
+        Alert.alert("ERROR",error.message)
+      }else {
         alert('An unexpected error occurred')
       }
     } finally {
@@ -122,38 +132,48 @@ const Home = () => {
       }
     }
   }
+
+  const handleDetailPress = (bookId: string) => {
+    router.push(`/(page)/detail?id=${bookId}`)
+  }
   
   const renderItem = ({item} : any) => {
     return (
-     
-      <View style={styles.bookCard}>
-       
+     <TouchableOpacity
+      onPress={() => handleDetailPress(item._id)}
+      activeOpacity={0.8}
+      >
 
-        <View style={styles.bookHeader}>
-
+        <View style={styles.bookCard}>
         
-          <View style={styles.userInfo}>
-            <Image source={{uri: item.user.profileImage}} style = {styles.avatar}/>
-            <Text style={styles.username}>{item.user.username}</Text>
+
+          <View style={styles.bookHeader}>
+
+          
+            <View style={styles.userInfo}>
+              <Image source={{uri: item.user.profileImage}} style = {styles.avatar}/>
+              <Text style={styles.username}>{item.user.username}</Text>
+            </View>
           </View>
-        </View>
 
-        <View style={styles.bookImageContainer}>
-          <Image source={{uri: item.image}} style={styles.bookImage} />
-        </View>
-
-        <View style={styles.bookDetails}>
-          <Text style= {styles.bookTitle}>{item.title}</Text>
-          <View style={styles.ratingContainer}>
-            {renderRatingStars(item.rating)}
+          <View style={styles.bookImageContainer}>
+            <Image source={{uri: item.image}} style={styles.bookImage} />
           </View>
-          <Text style={styles.caption}>{item.caption}</Text>
-          <Text style = {styles.date}>Shared on {formatPublishDate(item.createdAt)}</Text>
-        
+
+          <View style={styles.bookDetails}>
+            <Text style= {styles.bookTitle}>{item.title}</Text>
+            <View style={styles.ratingContainer}>
+              {renderRatingStars(item.rating)}
+            </View>
+            <Text style={styles.caption}>{item.caption}</Text>
+            <Text style = {styles.date}>Shared on {formatPublishDate(item.createdAt)}</Text>
+          
+          </View>
+
+
         </View>
 
-
-      </View>
+      </TouchableOpacity>
     )
   }
 
