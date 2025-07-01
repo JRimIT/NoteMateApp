@@ -116,10 +116,10 @@ const Home = () => {
 
       if (error.message === 'jwt expired' ) {
         logout()
-        Alert.alert("ERROR",error.message)
+        Alert.alert("ERROR","Please Login again!")
       }else if(error.message === 'jwt malformed' ) {
         logout()
-        Alert.alert("ERROR",error.message)
+        Alert.alert("ERROR","Please Login again!")
       }else {
         alert('An unexpected error occurred')
       }
@@ -134,7 +134,11 @@ const Home = () => {
   }
 
   const handleDetailPress = (bookId: string) => {
-    router.push(`/(page)/detail?id=${bookId}`)
+    // router.push(`/(page)/detail?id=${bookId}`)
+    router.push({
+      pathname: '/(page)/detail',
+      params: { id: bookId },
+    })
   }
   
   const renderItem = ({item} : any) => {
@@ -236,8 +240,8 @@ const Home = () => {
 
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Book Recommendations</Text>
-            <Text style={styles.headerSubtitle}>Discover and share your favorite books</Text>
+            <Text style={styles.headerTitle}>Book Note</Text>
+            <Text style={styles.headerSubtitle}>Note it. Mate it. Done.</Text>
           </View>
         }
         

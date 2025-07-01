@@ -7,7 +7,7 @@ dotenv.config();
 const router = express.Router();
 
 const generateToken = (userId) => {
-    return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '4h' });
+    return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '5h' });
 }
 
 // router.post('/signup', signup);

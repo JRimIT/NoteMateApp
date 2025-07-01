@@ -73,6 +73,39 @@ router.get('/', protectRoute, async (req, res) => {
     }
 });
 
+router.get('/detail/:id', async (req, res) => {
+
+    const bookId = req.params.id
+
+    try {
+        const bookDetail = await Book.findById(bookId)
+
+
+        res.status(201).json({ book: bookDetail })
+    } catch (error) {
+        console.error("Error fetching books:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+
+
+})
+router.post('/detail', async (req, res) => {
+
+    const { bookId, content } = req.body
+
+    try {
+        const bookUpdate = await Book.findByIdAndUpdate(bookId, { content: content })
+
+        res.status(201).json({ message: 'Update success!' })
+    } catch (error) {
+        console.error("Error fetching books:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+
+
+})
+
+
 router.get('/user', protectRoute, async (req, res) => {
     try {
         const userId = req.user._id;

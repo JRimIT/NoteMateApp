@@ -4,18 +4,23 @@ import { useAuthStore } from '../store/authStore'
 import styles from '../assets/styles/profile.styles'
 import { formatMemberSince } from '../lib/utils'
 
+
 const ProfileHeader = () => {
     const {user} = useAuthStore()
     if (!user) {
         return null 
     }
+    let url = user.profileImage
+    let newUrl = url.replace('svg', 'png');
+    // console.log("user profile image: ", newUrl);
     
   return (
     <View style={styles.profileHeader}>
       <Image
-        source={{ uri: user.profileImage }}
+        source={{ uri: newUrl }}
         style={styles.profileImage}
         />
+     
 
         <View style={styles.profileInfo}>
             <Text style={styles.username}>{user?.username || 'User Name'}</Text>
