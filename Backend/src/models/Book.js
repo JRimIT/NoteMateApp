@@ -26,10 +26,14 @@ const bookSchema = new mongoose.Schema({
     },
     content: {
         type: String,
+    },
+    tag: {
+       type: String,
     }
 }, {
     timestamps: true
 });
+bookSchema.index({ title: 'text', caption: 'text' });
 
 const Book = mongoose.models.Book || mongoose.model('Book', bookSchema);
 export default Book;

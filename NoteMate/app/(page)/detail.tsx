@@ -8,7 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import Loader from '../../components/Loader';
 import { API_URL } from '../../constants/api'
 import { useAuthStore } from '../../store/authStore';
-
+import { useFocusEffect } from '@react-navigation/native';
 import { debounce } from 'lodash';
 
 const Detail = () => {
@@ -102,6 +102,12 @@ const Detail = () => {
 
   }
 
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchDataBook();
+    }, [id])
+  );
+
   if (loading) {
     return (
       <Loader></Loader>
@@ -109,6 +115,7 @@ const Detail = () => {
   }
 
   return (
+    
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -148,6 +155,13 @@ const Detail = () => {
               <Text style={{ marginTop: 5 }}>NOTE AI</Text>
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity
+            style={{ marginTop: 16, backgroundColor: '#ff7043', padding: 12, borderRadius: 8, alignItems: 'center' }}
+            onPress={() => router.push({ pathname: 'edit', params: { id } })}
+          >
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Chỉnh sửa</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
