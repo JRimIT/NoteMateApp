@@ -32,6 +32,8 @@ const Home = () => {
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
   const TAGS = ['React', 'Node', 'AI', 'Book', 'Life'];
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
     
   useEffect(() => {
     fetchBooks()
@@ -39,6 +41,7 @@ const Home = () => {
 
   useFocusEffect(
     React.useCallback(() => {
+      fetchFavorites();
       fetchBooks(1, true);
     }, [])
   );
@@ -131,19 +134,64 @@ const Home = () => {
       params: { id: bookId },
     })
   }
+  const fetchFavorites = async () => {
+    const response = await fetch(`${API_URL}/auth/favorites`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    const data = await response.json();
+    console.log('API trả về favorites:', data);
+    setFavorites(data.map((book: any) => book._id));
+  };
   
+  const handleToggleFavorite = async (bookId: string) => {
+    const isFavorite = favorites.includes(bookId);
+    const method = isFavorite ? 'DELETE' : 'POST';
+    console.log('Trước khi gọi API, favorites:', favorites);
+    await fetch(`${API_URL}/auth/favorite/${bookId}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    await fetchFavorites();
+    console.log('Sau khi fetch lại, favorites:', favorites);
+  };
+
   const renderItem = ({item} : any) => {
     return (
      <TouchableOpacity
       onPress={() => handleDetailPress(item._id)}
       activeOpacity={0.8}
       >
-
         <View style={styles.bookCard}>
-        
-
+          <TouchableOpacity
+            onPress={() => handleToggleFavorite(item._id)}
+            style={{
+              position: 'absolute',
+              top: 12,
+              right: 12,
+              zIndex: 10,
+              backgroundColor: '#fff',
+              borderRadius: 20,
+              padding: 4,
+              elevation: 2,
+              shadowColor: '#000',
+              shadowOpacity: 0.08,
+              shadowRadius: 4,
+            }}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={favorites.includes(item._id) ? 'heart' : 'heart-outline'}
+              size={22}
+              color={favorites.includes(item._id) ? '#e53935' : '#888'}
+            />
+          </TouchableOpacity>
           <View style={styles.bookHeader}>
-
           
             <View style={styles.userInfo}>
               <Image source={{uri: item.user.profileImage}} style = {styles.avatar}/>
@@ -282,42 +330,54 @@ const Home = () => {
         )
       ) : (
         // Nếu không có searchText thì hiển thị danh sách books mặc định
-        <FlatList
-          data={books}
-          keyExtractor={(item : any) => item._id}
-          renderItem={renderItem}
-          contentContainerStyle= {styles.listContainer}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={() => fetchBooks(1, true)}
-              colors={[COLORS.primary]}
-              tintColor={COLORS.primary}
-            ></RefreshControl>
-          }
-          onEndReached={handleLoadMore}  
-          onEndReachedThreshold={0.5}
-          ListHeaderComponent={
-            <View style={styles.header}>
-              <Text style={styles.headerTitle}>Book Note</Text>
-              <Text style={styles.headerSubtitle}>Note it. Mate it. Done.</Text>
-            </View>
-          }
-          ListFooterComponent={
-            hasMore && books.length > 0 ? (
-              <ActivityIndicator style={styles.footerLoader} size="large" color={COLORS.primary} />
-            ): null
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons name="book-outline" size={64} color={COLORS.textSecondary} />
-              <Text style={styles.emptyText}>No books found</Text>
-              <Text style={styles.emptySubtext}>Start sharing your favorite books!</Text>
-            </View>
-          }
-        />
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, marginTop: 4 }}>
+          <TouchableOpacity
+            onPress={() => setShowFavoritesOnly(!showFavoritesOnly)}
+            style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 14, borderRadius: 20, backgroundColor: showFavoritesOnly ? '#ffeaea' : '#f0f0f0', borderWidth: 1, borderColor: showFavoritesOnly ? '#e53935' : '#ccc', marginRight: 8 }}
+            activeOpacity={0.8}
+          >
+            <Ionicons name={showFavoritesOnly ? 'heart' : 'heart-outline'} size={20} color={showFavoritesOnly ? '#e53935' : '#888'} />
+            <Text style={{ marginLeft: 8, color: showFavoritesOnly ? '#e53935' : '#333', fontWeight: 'bold' }}>
+              {showFavoritesOnly ? 'Chỉ yêu thích' : 'Tất cả sách'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       )}
+      <FlatList
+        data={showFavoritesOnly ? books.filter(b => favorites.includes(b._id)) : books}
+        keyExtractor={(item : any) => item._id}
+        renderItem={renderItem}
+        contentContainerStyle= {styles.listContainer}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => fetchBooks(1, true)}
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
+          ></RefreshControl>
+        }
+        onEndReached={handleLoadMore}  
+        onEndReachedThreshold={0.5}
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Book Note</Text>
+            <Text style={styles.headerSubtitle}>Note it. Mate it. Done.</Text>
+          </View>
+        }
+        ListFooterComponent={
+          hasMore && books.length > 0 ? (
+            <ActivityIndicator style={styles.footerLoader} size="large" color={COLORS.primary} />
+          ): null
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Ionicons name="book-outline" size={64} color={COLORS.textSecondary} />
+            <Text style={styles.emptyText}>No books found</Text>
+            <Text style={styles.emptySubtext}>Start sharing your favorite books!</Text>
+          </View>
+        }
+      />
     </View>
   )
 }

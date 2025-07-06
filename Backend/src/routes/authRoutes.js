@@ -2,6 +2,9 @@ import express from 'express';
 import User from '../models/User.js';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import Book from '../models/Book.js';
+import protectRoute from '../middleware/auth.middleware.js';
+
 dotenv.config();
 
 const router = express.Router();
@@ -100,6 +103,45 @@ router.post('/login', async (req, res) => {
 
 
 });
+router.post('/favorite/:bookId', protectRoute, async (req, res) => {
+    try {
+      const user = await User.findById(req.user._id);
+      const { bookId } = req.params;
+      if (!user.favorites.includes(bookId)) {
+        user.favorites.push(bookId);
+        await user.save();
+      }
+      res.json({ message: 'Đã thêm vào yêu thích' });
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+  
+  // Bỏ khỏi yêu thích
+  router.delete('/favorite/:bookId', protectRoute, async (req, res) => {
+    try {
+      const user = await User.findById(req.user._id);
+      const { bookId } = req.params;
+      user.favorites = user.favorites.filter(id => id.toString() !== bookId);
+      await user.save();
+      res.json({ message: 'Đã bỏ khỏi yêu thích' });
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  });
+  
+  // Lấy danh sách book yêu thích
+  router.get('/favorites', protectRoute, async (req, res) => {
+    try {
+      const user = await User.findById(req.user._id).populate({
+        path: 'favorites',
+        populate: { path: 'user', select: 'username profileImage' }
+      });
+      res.json(user.favorites);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  });
 
 
 
