@@ -1,208 +1,422 @@
-import { View, Text, TouchableOpacity, Alert, FlatList, Image, ActivityIndicator, RefreshControl } from 'react-native'
-import React, { useEffect, useState } from 'react'
-import { useRouter } from 'expo-router'
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  FlatList,
+  Image,
+  ActivityIndicator,
+  RefreshControl,
+  TextInput,
+  Modal,
+} from "react-native";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
-import { Ionicons } from '@expo/vector-icons'
-import { useAuthStore } from '../../store/authStore'
-import { API_URL } from '../../constants/api'
-import COLORS from '../../constants/colors'
-import styles from '../../assets/styles/profile.styles'
-import Loader from '../../components/Loader'
-import ProfileHeader from '../../components/ProfileHeader'
-import LogoutButton from '../../components/LogoutButton'
+import { useAuthStore } from "../../store/authStore";
+import { API_URL } from "../../constants/api";
+import COLORS from "../../constants/colors";
+import styles from "../../assets/styles/profile.styles";
+import Loader from "../../components/Loader";
+import LogoutButton from "../../components/LogoutButton";
 
-
-
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const Profile = () => {
-  const {logout, token} = useAuthStore()
-  const [books, setBooks] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [deleteBookId, setDeleteBookId] = useState<string | null>(null)
+  const { logout, token } = useAuthStore();
+  const [userInfo, setUserInfo] = useState<any>(null);
+  const [books, setBooks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [deleteBookId, setDeleteBookId] = useState<string | null>(null);
 
-  const router = useRouter()
+  const [editVisible, setEditVisible] = useState(false);
+  const [newUsername, setNewUsername] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newAvatar, setNewAvatar] = useState("");
+
+  const [passwordModalVisible, setPasswordModalVisible] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+
+  const router = useRouter();
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    fetchAllData();
+  }, []);
 
-  const fetchData = async() => {
+  const fetchAllData = async () => {
     try {
-      setLoading(true)
-      const response = await fetch(`${API_URL}/books/user`, {
-        method: 'GET',
+      setLoading(true);
+      await Promise.all([fetchUserInfo(), fetchUserBooks()]);
+    } catch (error) {
+      console.error("Error loading profile:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUserInfo = async () => {
+    try {
+      const response = await fetch(`${API_URL}/profile/me`, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
         },
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to fetch books')
-      }
-      
-      
-      setBooks(data.books)
+      if (!response.ok)
+        throw new Error(data.message || "Failed to fetch user info");
+
+      setUserInfo(data.user);
+      setNewUsername(data.user.username);
+      setNewEmail(data.user.email);
+      setNewAvatar(data.user.profileImage || "");
     } catch (error) {
-      console.error('Error fetching books:', error)
-      Alert.alert('Error', error instanceof Error ? error.message : 'An unexpected error occurred')
-    } finally {
-      setLoading(false)
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to load profile"
+      );
     }
-  }
+  };
 
-  const renderRatingPicker = (rating : any) => {
-    const stars = []
-    for (let i = 1; i <= 5; i++) {
-      stars.push(
-        
+  const fetchUserBooks = async () => {
+    try {
+      const response = await fetch(`${API_URL}/books/user`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-          <Ionicons 
-            key={i}
-            name={i <= rating ? "star" : "star-outline"}
-            size={22}
-            color={i <= rating ? "#f4b400" : COLORS.textSecondary}
-            
-            />
-        
-      )
+      const data = await response.json();
+
+      if (!response.ok)
+        throw new Error(data.message || "Failed to fetch books");
+
+      setBooks(data.books);
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to load books"
+      );
     }
-    return <View style={styles.ratingContainer}>{stars}</View>
-  }
-  
+  };
+
+  const renderRatingStars = (rating: number) => (
+    <View style={styles.ratingContainer}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Ionicons
+          key={i}
+          name={i < rating ? "star" : "star-outline"}
+          size={22}
+          color={i < rating ? "#f4b400" : COLORS.textSecondary}
+        />
+      ))}
+    </View>
+  );
+
   const handleDeleteBook = async (bookId: string) => {
     try {
-      setDeleteBookId(bookId)
+      setDeleteBookId(bookId);
       const response = await fetch(`${API_URL}/books/${bookId}`, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
         },
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.message || "Failed to delete book");
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to delete book')
-      }
-
-      setBooks(books.filter(book => book._id !== bookId))
-      Alert.alert('Success', 'Book deleted successfully')
+      setBooks(books.filter((book) => book._id !== bookId));
+      Alert.alert("Success", "Book deleted successfully");
     } catch (error) {
-      console.error('Error deleting book:', error)
-      Alert.alert('Error', error instanceof Error ? error.message : 'An unexpected error occurred')
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Delete failed"
+      );
     } finally {
-      setDeleteBookId(null)
+      setDeleteBookId(null);
     }
-  }
+  };
 
   const confirmDelete = (bookId: string) => {
     Alert.alert("Delete Book", "Are you sure you want to delete this book?", [
-      {
-        text: "Cancel",
-        style: "cancel"
-      },
+      { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
         onPress: () => handleDeleteBook(bookId),
-        style: "destructive"
-      }
-    ])
-  }
-
-
-  const renderBookItem = ({ item }: { item: any }) => {
-    return (
-      <View style={styles.bookItem}>
-        <Image source={{ uri: item.image }} style={styles.bookImage} />
-
-        <View style={styles.bookInfo}>
-          <Text style = {styles.bookTitle}>{item.title}</Text>
-          <View style = {styles.ratingContainer}>{renderRatingPicker(item.rating)}</View>
-          <Text style = {styles.bookCaption} numberOfLines={2}>{item.caption}</Text>
-          <Text style = {styles.bookDate}>{new Date(item.createdAt).toLocaleDateString()}</Text>
-        </View>
-
-        <TouchableOpacity style={styles.deleteButton} onPress={() => confirmDelete(item._id)}>
-          {deleteBookId === item._id ? (
-            <ActivityIndicator size="small" color={COLORS.primary} />
-          ) : (
-            <Ionicons name="trash-outline" size={24} color={COLORS.primary} />
-          )}
-        </TouchableOpacity>
-
-      </View>
-    )
- 
-  }
+        style: "destructive",
+      },
+    ]);
+  };
 
   const handleRefresh = async () => {
-    setRefreshing(true)
-    try {
-      await sleep(800) // Simulate network delay
-      await fetchData()
-    } catch (error) {
-      console.error('Error refreshing data:', error)
-      Alert.alert('Error', error instanceof Error ? error.message : 'An unexpected error occurred')
-    } finally {
-      setRefreshing(false)
-    }
-  }
+    setRefreshing(true);
+    await sleep(800);
+    await fetchAllData();
+    setRefreshing(false);
+  };
 
-  if ( loading && !refreshing) {
-    return (
-     <Loader></Loader>
-    )
-  }
+  const handleUpdateProfile = async () => {
+    try {
+      const response = await fetch(`${API_URL}/profile/me`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: newUsername,
+          email: newEmail,
+          profileImage: newAvatar,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Update failed");
+
+      setUserInfo(data.user);
+      setEditVisible(false);
+      Alert.alert("Success", "Profile updated successfully");
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Update failed"
+      );
+    }
+  };
+
+  const handleChangePassword = async () => {
+    try {
+      const response = await fetch(`${API_URL}/profile/change-password`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          currentPassword: oldPassword,
+          newPassword,
+        }),
+      });
+
+      const text = await response.text();
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        throw new Error("Unexpected server response (not JSON):\n" + text);
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message || "Change password failed");
+      }
+
+      Alert.alert("Success", "Password changed successfully");
+      setPasswordModalVisible(false);
+      setOldPassword("");
+      setNewPassword("");
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Change failed"
+      );
+    }
+  };
+
+  const renderBookItem = ({ item }: { item: any }) => (
+    <View style={styles.bookItem}>
+      <Image source={{ uri: item.image }} style={styles.bookImage} />
+      <View style={styles.bookInfo}>
+        <Text style={styles.bookTitle}>{item.title}</Text>
+        {renderRatingStars(item.rating)}
+        <Text style={styles.bookCaption} numberOfLines={2}>
+          {item.caption}
+        </Text>
+        <Text style={styles.bookDate}>
+          {new Date(item.createdAt).toLocaleDateString()}
+        </Text>
+      </View>
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={() => confirmDelete(item._id)}
+      >
+        {deleteBookId === item._id ? (
+          <ActivityIndicator size="small" color={COLORS.primary} />
+        ) : (
+          <Ionicons name="trash-outline" size={24} color={COLORS.primary} />
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+
+  if (loading && !refreshing) return <Loader />;
 
   return (
-      
     <View style={styles.container}>
-       <ProfileHeader/>
-        <LogoutButton></LogoutButton>
-
-        <View style={styles.booksHeader}>
-          <Text style = {styles.bookTitle}>Your Recommendation</Text>
-          <Text style = {styles.booksCount}>{books?.length} books</Text>
+      <View style={styles.profileHeader}>
+        {userInfo?.profileImage ? (
+          <Image
+            source={{ uri: userInfo.profileImage }}
+            style={styles.avatar}
+          />
+        ) : (
+          <Ionicons
+            name="person-circle-outline"
+            size={70}
+            color={COLORS.primary}
+          />
+        )}
+        <View>
+          <Text style={styles.username}>{userInfo?.username}</Text>
+          <Text style={styles.email}>{userInfo?.email}</Text>
         </View>
+        <TouchableOpacity
+          onPress={() => setEditVisible(true)}
+          style={{ marginLeft: 10, bottom: 20 }}
+        >
+          <Ionicons name="create-outline" size={22} color={COLORS.primary} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setPasswordModalVisible(true)}
+          style={{ marginLeft: 10, bottom: 20 }}
+        >
+          <Ionicons
+            name="lock-closed-outline"
+            size={22}
+            color={COLORS.primary}
+          />
+        </TouchableOpacity>
+      </View>
 
-        <FlatList
-          data={books}
-          keyExtractor={(item : any) => item._id}
-          renderItem={renderBookItem}
-          contentContainerStyle={styles.booksList}
-          showsVerticalScrollIndicator={false}
-          
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              colors={[COLORS.primary]}
-              tintColor={COLORS.primary}
+      <LogoutButton />
+
+      <View style={styles.booksHeader}>
+        <Text style={styles.bookTitle}>Your Recommendations</Text>
+        <Text style={styles.booksCount}>{books?.length} books</Text>
+      </View>
+
+      <FlatList
+        data={books}
+        keyExtractor={(item) => item._id}
+        renderItem={renderBookItem}
+        contentContainerStyle={styles.booksList}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
+          />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Ionicons
+              name="book-outline"
+              size={50}
+              color={COLORS.textSecondary}
             />
-          }
+            <Text style={styles.emptyText}>No books found</Text>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => router.push("/create")}
+            >
+              <Ionicons name="add" size={24} color={COLORS.white} />
+              <Text style={styles.addButtonText}>Add Book</Text>
+            </TouchableOpacity>
+          </View>
+        }
+      />
 
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons name="book-outline" size={50} color={COLORS.textSecondary} />
-              <Text style={styles.emptyText}>No books found</Text>
-              <TouchableOpacity style={styles.addButton} onPress={() => router.push('/create')}>
-                <Ionicons name="add" size={24} color={COLORS.white} />
-                <Text style={styles.addButtonText}>Add Book</Text>
+      {/* Modal chỉnh sửa thông tin */}
+      <Modal visible={editVisible} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Edit Profile</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Username"
+              value={newUsername}
+              onChangeText={setNewUsername}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={newEmail}
+              onChangeText={setNewEmail}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Profile Image URL"
+              value={newAvatar}
+              onChangeText={setNewAvatar}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                onPress={() => setEditVisible(false)}
+                style={styles.cancelButton}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleUpdateProfile}
+                style={styles.saveButton}
+              >
+                <Text style={styles.saveButtonText}>Save</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
 
-          }
+      {/* Modal đổi mật khẩu */}
+      <Modal
+        visible={passwordModalVisible}
+        animationType="slide"
+        transparent={true}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Change Password</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Current Password"
+              secureTextEntry
+              value={oldPassword}
+              onChangeText={setOldPassword}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="New Password"
+              secureTextEntry
+              value={newPassword}
+              onChangeText={setNewPassword}
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                onPress={() => setPasswordModalVisible(false)}
+                style={styles.cancelButton}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleChangePassword}
+                style={styles.saveButton}
+              >
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+};
 
-        ></FlatList>
-
-     </View>
-  )
-}
-
-export default Profile
+export default Profile;
