@@ -12,7 +12,28 @@ import User from '../models/User.js';
 //         'Content-Type': 'application/json'
 //     }
 // });
-
+const handleCreateBook = async () => {
+    const response = await fetch(`${BACKEND_URL}/api/books`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        title, caption, image, rating, content, tags
+      }),
+    });
+    const text = await response.text();
+    console.log('Response text:', text); // <-- Thêm dòng này để xem backend trả về gì
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error('Không parse được JSON:', e);
+      return;
+    }
+    // ...xử lý tiếp
+  };
 const protectRoute = async (req, res, next) => {
 
     try {

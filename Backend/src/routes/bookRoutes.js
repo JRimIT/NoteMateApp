@@ -104,6 +104,28 @@ router.post('/detail', async (req, res) => {
 
 
 })
+router.get('/search', async (req, res) => {
+    try {
+      const { q } = req.query;
+      if (!q) {
+        return res.status(400).json({ message: 'Missing search query' });
+      }
+      // Thử full-text search trước
+      let results = await Book.find(
+        { $text: { $search: q } },
+        { score: { $meta: "textScore" } }
+      ).sort({ score: { $meta: "textScore" } }).populate('user', 'username profileImage');
+      // Nếu không có kết quả, thử tìm gần đúng theo title
+      if (!results.length) {
+        results = await Book.find({
+          title: { $regex: q, $options: 'i' }
+        }).populate('user', 'username profileImage');
+      }
+      res.json(results);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  });
 
 
 router.get('/user', protectRoute, async (req, res) => {
@@ -117,6 +139,33 @@ router.get('/user', protectRoute, async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+
+// Backend/src/routes/bookRoutes.js
+router.put('/:id', protectRoute, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { title, caption, image, rating, content, tags } = req.body;
+      const book = await Book.findById(id);
+  
+      if (!book) return res.status(404).json({ message: 'Book not found' });
+      if (book.user.toString() !== req.user._id.toString()) {
+        return res.status(403).json({ message: 'Not authorized' });
+      }
+  
+      // Cập nhật các trường
+      if (title) book.title = title;
+      if (caption) book.caption = caption;
+      if (image) book.image = image;
+      if (rating) book.rating = rating;
+      if (content) book.content = content;
+      if (tags) book.tags = tags;
+  
+      await book.save();
+      res.json({ message: 'Book updated successfully', book });
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  });
 
 router.delete('/:id', protectRoute, async (req, res) => {
     try {
