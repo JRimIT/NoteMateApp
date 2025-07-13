@@ -86,10 +86,8 @@ const Create = () => {
       const uriParts = image.split('.')
       const fileType = uriParts[uriParts.length - 1]
       const imageType = fileType ? `image/${fileType.toLowerCase()}` : 'image/jpeg'
-
       const imageDataUrl = `data:${imageType};base64,${imageBase64}`
-      // const imageDataUrl = imageBase64;
-      
+
       const response = await fetch(`http://10.0.2.2:3000/api/books`, {
         method: 'POST',
         headers: {
@@ -104,30 +102,34 @@ const Create = () => {
         }),
       })
 
-     
-   
-      const data = await response.json()
+      const text = await response.text();
+      console.log('Response text:', text);
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error('Không parse được JSON:', e);
+        Alert.alert('Error', 'Server trả về dữ liệu không hợp lệ.');
+        setIsLoading(false);
+        return;
+      }
       if (!response.ok) {
         throw new Error(data.message || 'Something went wrong')
       }
       Alert.alert('Success', 'Book recommendation added successfully!')
       setTitle('')
       setCaption('')
-
       setImage('')
       setImageBase64('')
       setRating(3)
       router.push('/')
-
     } catch (error) {
       console.log('Error submitting book recommendation:', error);
       const errorMessage = (error instanceof Error && error.message) ? error.message : 'Something went wrong. Please try again.'
       Alert.alert('Error', errorMessage)
-      
-    }finally {
+    } finally {
       setIsLoading(false)
     }
-
   }
 
   const renderRatingPicker = (rating : any) => {

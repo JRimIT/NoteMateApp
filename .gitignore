@@ -38,3 +38,4 @@ Backend/.env*.local
 
 # typescript
 *.tsbuildinfo
+node_modules

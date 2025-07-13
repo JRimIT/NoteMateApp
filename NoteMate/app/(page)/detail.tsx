@@ -1,16 +1,32 @@
-import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
-import React, { useState } from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
 import styles from '../../assets/styles/home.styles';
 import COLORS from '../../constants/colors';
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
 import Loader from '../../components/Loader';
+import { API_URL } from '../../constants/api'
+import { useAuthStore } from '../../store/authStore';
+import { useFocusEffect } from '@react-navigation/native';
+import { debounce } from 'lodash';
 
 const Detail = () => {
   const { id } = useLocalSearchParams();
+  const {token} = useAuthStore();
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
+  const [contentBook, setContentBook] = useState('')
+
+  useEffect(() => {
+    fetchDataBook()
+  },[])
+
+  useEffect(()=> {
+    if (note !== '') {
+      autoSaveNote(note);
+    }
+  }, [note])
 
   const pickImage = async () => {
     if (Platform.OS === 'web') {
@@ -43,7 +59,7 @@ const Detail = () => {
         });
 
         const { summary } = response.data;
-        setNote(summary);
+        setNote(prev => prev + "\n" + summary);;
       } catch (error) {
         console.error('Upload failed:', error);
         alert('Upload failed');
@@ -53,7 +69,45 @@ const Detail = () => {
     }
   };
 
+  const fetchDataBook = async() => {
+    try {
+      const response = await axios.get(`${API_URL}/books/detail/${id}`,{
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+      console.log('Data Book: ', response.data.book.content);
+      setContentBook(response.data.book.content)
+      setNote(response.data.book.content)
+
+    } catch (error) {
+      console.error('Error fetching book detail:', error)
+    }
+  }
+
+  const autoSaveNote = debounce(async (content: string) => {
+    try {
+      await axios.post(`${API_URL}/books/detail`, {
+        bookId: id,
+        content,
+      });
+      console.log('Auto saved');
+    } catch (error) {
+      console.error('Error auto saving note:', error);
+    }
+  }, 1000); // Đợi 1 giây sau lần nhập cuối cùng mới gọi API
   
+  const handleBack = () => {
+
+  }
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchDataBook();
+    }, [id])
+  );
+
   if (loading) {
     return (
       <Loader></Loader>
@@ -61,6 +115,7 @@ const Detail = () => {
   }
 
   return (
+    
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -72,10 +127,11 @@ const Detail = () => {
       >
         <View style={styles.container}>
           <View style={style.header}>
-            <Text style={styles.headerTitle}>Book Note</Text>
-            <TouchableOpacity style={style.buttonSubmit}>
-              <Text style={{ color: 'white' }}>Finished</Text>
+            <TouchableOpacity style={style.buttonSubmit}  onPress={() => router.back()}>
+              <Text style={style.headerTitle}>Back</Text>
             </TouchableOpacity>
+            
+            <Text style={styles.headerTitle}>Book Note</Text>
           </View>
 
           <View style={style.bookCard}>
@@ -99,6 +155,13 @@ const Detail = () => {
               <Text style={{ marginTop: 5 }}>NOTE AI</Text>
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity
+            style={{ marginTop: 16, backgroundColor: '#ff7043', padding: 12, borderRadius: 8, alignItems: 'center' }}
+            onPress={() => router.push({ pathname: 'edit', params: { id } })}
+          >
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Chỉnh sửa</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -163,6 +226,13 @@ const style = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 10,
   },
+  headerTitle: {
+    fontSize: 24,
+    fontFamily: "JetBrainsMono-Medium",
+    letterSpacing: 0.5,
+    color: COLORS.white,
+    marginBottom: 8,
+},
   buttonSubmit: {
     backgroundColor: '#FF7A20',
     justifyContent: 'center',
