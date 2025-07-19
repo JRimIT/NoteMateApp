@@ -7,12 +7,11 @@ import {
   Image,
   ActivityIndicator,
   RefreshControl,
-  TextInput,
-  Modal,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 
 import { useAuthStore } from "../../store/authStore";
 import { API_URL } from "../../constants/api";
@@ -30,15 +29,7 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [deleteBookId, setDeleteBookId] = useState<string | null>(null);
-
-  const [editVisible, setEditVisible] = useState(false);
-  const [newUsername, setNewUsername] = useState("");
-  const [newEmail, setNewEmail] = useState("");
   const [newAvatar, setNewAvatar] = useState("");
-
-  const [passwordModalVisible, setPasswordModalVisible] = useState(false);
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
 
   const [stats, setStats] = useState({
     total: 0,
@@ -77,8 +68,6 @@ const Profile = () => {
         throw new Error(data.message || "Failed to fetch user info");
 
       setUserInfo(data.user);
-      setNewUsername(data.user.username);
-      setNewEmail(data.user.email);
       setNewAvatar(data.user.profileImage || "");
     } catch (error) {
       Alert.alert(
@@ -102,7 +91,7 @@ const Profile = () => {
         throw new Error(data.message || "Failed to fetch books");
 
       setBooks(data.books);
-      calculateStats(data.books); // ⬅️ Thêm dòng này để tính thống kê
+      calculateStats(data.books);
     } catch (error) {
       Alert.alert(
         "Error",
@@ -192,71 +181,41 @@ const Profile = () => {
     setRefreshing(false);
   };
 
-  const handleUpdateProfile = async () => {
-    try {
-      const response = await fetch(`${API_URL}/profile/me`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: newUsername,
-          email: newEmail,
-          profileImage: newAvatar,
-        }),
-      });
+  const handlePickAvatar = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+      base64: true,
+    });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Update failed");
+    if (!result.canceled) {
+      const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+      setNewAvatar(base64Image);
 
-      setUserInfo(data.user);
-      setEditVisible(false);
-      Alert.alert("Success", "Profile updated successfully");
-    } catch (error) {
-      Alert.alert(
-        "Error",
-        error instanceof Error ? error.message : "Update failed"
-      );
-    }
-  };
-
-  const handleChangePassword = async () => {
-    try {
-      const response = await fetch(`${API_URL}/profile/change-password`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          currentPassword: oldPassword,
-          newPassword,
-        }),
-      });
-
-      const text = await response.text();
-
-      let data;
       try {
-        data = JSON.parse(text);
-      } catch (err) {
-        throw new Error("Unexpected server response (not JSON):\n" + text);
-      }
+        const response = await fetch(`${API_URL}/profile/avatar`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ profileImage: base64Image }),
+        });
 
-      if (!response.ok) {
-        throw new Error(data.message || "Change password failed");
-      }
+        const data = await response.json();
+        if (!response.ok)
+          throw new Error(data.message || "Failed to update avatar");
 
-      Alert.alert("Success", "Password changed successfully");
-      setPasswordModalVisible(false);
-      setOldPassword("");
-      setNewPassword("");
-    } catch (error) {
-      Alert.alert(
-        "Error",
-        error instanceof Error ? error.message : "Change failed"
-      );
+        Alert.alert("Success", "Avatar updated successfully");
+        fetchUserInfo(); // Refresh info from server
+      } catch (error) {
+        Alert.alert(
+          "Error",
+          error instanceof Error ? error.message : "Failed to update avatar"
+        );
+      }
     }
   };
 
@@ -291,11 +250,8 @@ const Profile = () => {
   return (
     <View style={styles.container}>
       <View style={styles.profileHeader}>
-        {userInfo?.profileImage ? (
-          <Image
-            source={{ uri: userInfo.profileImage }}
-            style={styles.avatar}
-          />
+        {newAvatar ? (
+          <Image source={{ uri: newAvatar }} style={styles.avatar} />
         ) : (
           <Ionicons
             name="person-circle-outline"
@@ -307,7 +263,6 @@ const Profile = () => {
           <Text style={styles.username}>{userInfo?.username}</Text>
           <Text style={styles.email}>{userInfo?.email}</Text>
 
-          {/* Thống kê */}
           <View style={{ marginTop: 8 }}>
             <Text style={styles.statsText}>📚 Total: {stats.total}</Text>
             <Text style={styles.statsText}>⭐ Avg: {stats.averageRating}</Text>
@@ -316,20 +271,17 @@ const Profile = () => {
         </View>
 
         <TouchableOpacity
-          onPress={() => setEditVisible(true)}
+          onPress={handlePickAvatar}
           style={{ marginLeft: 10, bottom: 20 }}
         >
-          <Ionicons name="create-outline" size={22} color={COLORS.primary} />
+          <Ionicons name="image-outline" size={24} color={COLORS.primary} />
         </TouchableOpacity>
+
         <TouchableOpacity
-          onPress={() => setPasswordModalVisible(true)}
+          onPress={() => router.push("/setting")}
           style={{ marginLeft: 10, bottom: 20 }}
         >
-          <Ionicons
-            name="lock-closed-outline"
-            size={22}
-            color={COLORS.primary}
-          />
+          <Ionicons name="settings-outline" size={24} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
 
@@ -372,88 +324,6 @@ const Profile = () => {
           </View>
         }
       />
-
-      {/* Modal chỉnh sửa thông tin */}
-      <Modal visible={editVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Edit Profile</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Username"
-              value={newUsername}
-              onChangeText={setNewUsername}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              value={newEmail}
-              onChangeText={setNewEmail}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Profile Image URL"
-              value={newAvatar}
-              onChangeText={setNewAvatar}
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                onPress={() => setEditVisible(false)}
-                style={styles.cancelButton}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleUpdateProfile}
-                style={styles.saveButton}
-              >
-                <Text style={styles.saveButtonText}>Save</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* Modal đổi mật khẩu */}
-      <Modal
-        visible={passwordModalVisible}
-        animationType="slide"
-        transparent={true}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Change Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Current Password"
-              secureTextEntry
-              value={oldPassword}
-              onChangeText={setOldPassword}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="New Password"
-              secureTextEntry
-              value={newPassword}
-              onChangeText={setNewPassword}
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                onPress={() => setPasswordModalVisible(false)}
-                style={styles.cancelButton}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleChangePassword}
-                style={styles.saveButton}
-              >
-                <Text style={styles.saveButtonText}>Save</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 };

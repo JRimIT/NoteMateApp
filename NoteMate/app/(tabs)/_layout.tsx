@@ -1,25 +1,24 @@
-import { View, Text } from 'react-native'
-import React, { use } from 'react'
-import { Tabs } from 'expo-router'
-import { Ionicons } from '@expo/vector-icons'
+import { View, Text } from "react-native";
+import React, { use } from "react";
+import { Tabs } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import COLORS from '../../constants/colors'
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import COLORS from "../../constants/colors";
 
 const TabLayout = () => {
-  const insets = useSafeAreaInsets()
+  const insets = useSafeAreaInsets();
 
   return (
-    <Tabs 
+    <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: COLORS.primary,
         headerTitleStyle: {
           color: COLORS.textPrimary,
-          fontWeight: '600',
+          fontWeight: "600",
         },
         headerShadowVisible: false,
-
 
         tabBarStyle: {
           backgroundColor: COLORS.cardBackground,
@@ -29,39 +28,46 @@ const TabLayout = () => {
           paddingBottom: insets.bottom, // Add padding for bottom safe area
           height: 60 + insets.bottom, // Adjust height to include bottom safe area
         },
-    
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: "Home",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" size={size} color={color} />
+          ),
         }}
-        >
-        <Tabs.Screen
-            name="index"
-            options={{
-                title: "Home",
-                tabBarIcon: ({color, size}) => (
-                    <Ionicons name="home-outline" size={size} color={color} />
-                ),
-            }}
-        />
-        <Tabs.Screen
-            name="create"
-            options={{
-                title: "Create",
-                tabBarIcon: ({color, size}) => (
-                    <Ionicons name="add-circle-outline" size={size} color={color} />
-                ),
-            }}
-        />
-        <Tabs.Screen
-
-            name="profile"
-            options={{
-                title: "Profile",
-                tabBarIcon: ({ color }) => (
-                    <Ionicons name="person-outline" size={24} color={color} />
-                ),
-            }}
-        />
+      />
+      <Tabs.Screen
+        name="create"
+        options={{
+          title: "Create",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add-circle-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="person-outline" size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="setting"
+        options={{
+          title: "Setting",
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="settings-outline" size={24} color={color} />
+          ),
+        }}
+      />
     </Tabs>
-  )
-}
+  );
+};
 
-export default TabLayout
+export default TabLayout;
