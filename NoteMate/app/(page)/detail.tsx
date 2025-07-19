@@ -1,38 +1,51 @@
-import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from 'react-native';
-import React, { useEffect, useState } from 'react';
-import { router, useLocalSearchParams } from 'expo-router';
-import styles from '../../assets/styles/home.styles';
-import COLORS from '../../constants/colors';
-import axios from 'axios';
-import * as ImagePicker from 'expo-image-picker';
-import Loader from '../../components/Loader';
-import { API_URL } from '../../constants/api'
-import { useAuthStore } from '../../store/authStore';
-import { useFocusEffect } from '@react-navigation/native';
-import { debounce } from 'lodash';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
+import React, { useEffect, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import styles from "../../assets/styles/home.styles";
+import COLORS from "../../constants/colors";
+import axios from "axios";
+import * as ImagePicker from "expo-image-picker";
+import Loader from "../../components/Loader";
+import { API_URL } from "../../constants/api";
+import { useAuthStore } from "../../store/authStore";
+import { useFocusEffect } from "@react-navigation/native";
+import { debounce } from "lodash";
 
 const Detail = () => {
   const { id } = useLocalSearchParams();
-  const {token} = useAuthStore();
-  const [note, setNote] = useState('');
+  const { token } = useAuthStore();
+  const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
-  const [contentBook, setContentBook] = useState('')
+  const [contentBook, setContentBook] = useState("");
 
   useEffect(() => {
-    fetchDataBook()
-  },[])
+    fetchDataBook();
+  }, []);
 
-  useEffect(()=> {
-    if (note !== '') {
+  useEffect(() => {
+    if (note !== "") {
       autoSaveNote(note);
     }
-  }, [note])
+  }, [note]);
 
   const pickImage = async () => {
-    if (Platform.OS === 'web') {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        alert('Sorry, we need camera roll permissions to make this work!');
+    if (Platform.OS === "web") {
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        alert("Sorry, we need camera roll permissions to make this work!");
         return;
       }
     }
@@ -46,45 +59,48 @@ const Detail = () => {
     if (!result.canceled) {
       const uri = result.assets[0].uri;
       const formData = new FormData();
-      formData.append('image', {
+      formData.append("image", {
         uri,
-        name: 'photo.jpg',
-        type: 'image/jpeg',
+        name: "photo.jpg",
+        type: "image/jpeg",
       } as any);
 
       try {
         setLoading(true);
-        const response = await axios.post('http://10.0.2.2:3000/api/AI/upload', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        const response = await axios.post(
+          "http://10.0.2.2:3000/api/AI/upload",
+          formData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
+        );
 
         const { summary } = response.data;
-        setNote(prev => prev + "\n" + summary);;
+        setNote((prev) => prev + "\n" + summary);
       } catch (error) {
-        console.error('Upload failed:', error);
-        alert('Upload failed');
+        console.error("Upload failed:", error);
+        alert("Upload failed");
       } finally {
         setLoading(false);
       }
     }
   };
 
-  const fetchDataBook = async() => {
+  const fetchDataBook = async () => {
     try {
-      const response = await axios.get(`${API_URL}/books/detail/${id}`,{
+      const response = await axios.get(`${API_URL}/books/detail/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-      })
-      console.log('Data Book: ', response.data.book.content);
-      setContentBook(response.data.book.content)
-      setNote(response.data.book.content)
-
+      });
+      console.log("Data Book: ", response.data.book.content);
+      setContentBook(response.data.book.content);
+      setNote(response.data.book.content);
     } catch (error) {
-      console.error('Error fetching book detail:', error)
+      console.error("Error fetching book detail:", error);
     }
-  }
+  };
 
   const autoSaveNote = debounce(async (content: string) => {
     try {
@@ -92,15 +108,13 @@ const Detail = () => {
         bookId: id,
         content,
       });
-      console.log('Auto saved');
+      console.log("Auto saved");
     } catch (error) {
-      console.error('Error auto saving note:', error);
+      console.error("Error auto saving note:", error);
     }
   }, 1000); // Đợi 1 giây sau lần nhập cuối cùng mới gọi API
-  
-  const handleBack = () => {
 
-  }
+  const handleBack = () => {};
 
   useFocusEffect(
     React.useCallback(() => {
@@ -109,17 +123,14 @@ const Detail = () => {
   );
 
   if (loading) {
-    return (
-      <Loader></Loader>
-    )
+    return <Loader></Loader>;
   }
 
   return (
-    
     <KeyboardAvoidingView
       style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
     >
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
@@ -127,10 +138,13 @@ const Detail = () => {
       >
         <View style={styles.container}>
           <View style={style.header}>
-            <TouchableOpacity style={style.buttonSubmit}  onPress={() => router.back()}>
+            <TouchableOpacity
+              style={style.buttonSubmit}
+              onPress={() => router.back()}
+            >
               <Text style={style.headerTitle}>Back</Text>
             </TouchableOpacity>
-            
+
             <Text style={styles.headerTitle}>Book Note</Text>
           </View>
 
@@ -151,16 +165,25 @@ const Detail = () => {
 
           <View style={style.footer}>
             <TouchableOpacity style={style.AIbutton} onPress={pickImage}>
-              <Image source={require('../../assets/images/i.png')} style={{ width: 30, height: 30, resizeMode: 'contain' }} />
+              <Image
+                source={require("../../assets/images/i.png")}
+                style={{ width: 30, height: 30, resizeMode: "contain" }}
+              />
               <Text style={{ marginTop: 5 }}>NOTE AI</Text>
             </TouchableOpacity>
           </View>
 
           <TouchableOpacity
-            style={{ marginTop: 16, backgroundColor: '#ff7043', padding: 12, borderRadius: 8, alignItems: 'center' }}
-            onPress={() => router.push({ pathname: 'edit', params: { id } })}
+            style={{
+              marginTop: 16,
+              backgroundColor: "#ff7043",
+              padding: 12,
+              borderRadius: 8,
+              alignItems: "center",
+            }}
+            onPress={() => router.push({ pathname: "edit", params: { id } })}
           >
-            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Chỉnh sửa</Text>
+            <Text style={{ color: "#fff", fontWeight: "bold" }}>Chỉnh sửa</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -171,21 +194,21 @@ const Detail = () => {
 const style = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 16,
   },
   input: {
     flex: 1,
     fontSize: 16,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
     minHeight: 300,
   },
   AIbutton: {
-    backgroundColor: '#F9A065',
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#F9A065",
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     width: 120,
     padding: 10,
     borderRadius: 10,
@@ -203,12 +226,12 @@ const style = StyleSheet.create({
     elevation: 3,
     borderWidth: 1,
     borderColor: COLORS.border,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   footer: {
     flex: 1,
-    backgroundColor: '#FFCEAE',
+    backgroundColor: "#FFCEAE",
     borderRadius: 16,
     marginBottom: 20,
     padding: 16,
@@ -222,8 +245,8 @@ const style = StyleSheet.create({
   },
   header: {
     marginBottom: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     padding: 10,
   },
   headerTitle: {
@@ -232,11 +255,11 @@ const style = StyleSheet.create({
     letterSpacing: 0.5,
     color: COLORS.white,
     marginBottom: 8,
-},
+  },
   buttonSubmit: {
-    backgroundColor: '#FF7A20',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#FF7A20",
+    justifyContent: "center",
+    alignItems: "center",
     height: 35,
     paddingHorizontal: 10,
     borderRadius: 10,
