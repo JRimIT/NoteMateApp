@@ -40,6 +40,12 @@ const Profile = () => {
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
+  const [stats, setStats] = useState({
+    total: 0,
+    averageRating: 0,
+    latestTitle: "",
+  });
+
   const router = useRouter();
 
   useEffect(() => {
@@ -96,12 +102,35 @@ const Profile = () => {
         throw new Error(data.message || "Failed to fetch books");
 
       setBooks(data.books);
+      calculateStats(data.books); // ⬅️ Thêm dòng này để tính thống kê
     } catch (error) {
       Alert.alert(
         "Error",
         error instanceof Error ? error.message : "Failed to load books"
       );
     }
+  };
+
+  const calculateStats = (books: any[]) => {
+    const total = books.length;
+
+    const averageRating =
+      total > 0
+        ? books.reduce((sum: number, b: any) => sum + (b.rating || 0), 0) /
+          total
+        : 0;
+
+    const latestBook = books.reduce(
+      (latest: any, b: any) =>
+        new Date(b.createdAt) > new Date(latest.createdAt) ? b : latest,
+      books[0] || { title: "" }
+    );
+
+    setStats({
+      total,
+      averageRating: Number(averageRating.toFixed(1)),
+      latestTitle: latestBook?.title || "",
+    });
   };
 
   const renderRatingStars = (rating: number) => (
@@ -131,7 +160,9 @@ const Profile = () => {
       if (!response.ok)
         throw new Error(data.message || "Failed to delete book");
 
-      setBooks(books.filter((book) => book._id !== bookId));
+      const updatedBooks = books.filter((book) => book._id !== bookId);
+      setBooks(updatedBooks);
+      calculateStats(updatedBooks);
       Alert.alert("Success", "Book deleted successfully");
     } catch (error) {
       Alert.alert(
@@ -275,7 +306,15 @@ const Profile = () => {
         <View>
           <Text style={styles.username}>{userInfo?.username}</Text>
           <Text style={styles.email}>{userInfo?.email}</Text>
+
+          {/* Thống kê */}
+          <View style={{ marginTop: 8 }}>
+            <Text style={styles.statsText}>📚 Total: {stats.total}</Text>
+            <Text style={styles.statsText}>⭐ Avg: {stats.averageRating}</Text>
+            <Text style={styles.statsText}>🆕 Newest: {stats.latestTitle}</Text>
+          </View>
         </View>
+
         <TouchableOpacity
           onPress={() => setEditVisible(true)}
           style={{ marginLeft: 10, bottom: 20 }}
