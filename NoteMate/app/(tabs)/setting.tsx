@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,10 +10,15 @@ import {
   Modal,
 } from "react-native";
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { API_URL } from "../../constants/api";
 import styles from "../../assets/styles/setting.styles";
 import COLORS from "../../constants/colors";
+import LogoutButton from "../../components/LogoutButton";
+import { useAuthStore } from "../../store/authStore";
+import { useRouter } from "expo-router";
 
 const Setting = ({ navigation }: any) => {
+  const { logout, token } = useAuthStore();
   const [offlineMode, setOfflineMode] = useState(true);
   const [pushNotification, setPushNotification] = useState(false);
   const [soundEffects, setSoundEffects] = useState(true);
@@ -23,6 +28,9 @@ const Setting = ({ navigation }: any) => {
   const [editingField, setEditingField] = useState<null | "username" | "email">(
     null
   );
+  const [originalUsername, setOriginalUsername] = useState("");
+  const [originalEmail, setOriginalEmail] = useState("");
+
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -31,10 +39,7 @@ const Setting = ({ navigation }: any) => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
-  const handleLogout = () => {
-    Alert.alert("Logout", "You have been logged out.");
-  };
+  const router = useRouter();
 
   const handleDeleteAccount = () => {
     Alert.alert(
@@ -44,13 +49,45 @@ const Setting = ({ navigation }: any) => {
     );
   };
 
-  const handleSaveField = (field: "username" | "email") => {
-    setEditingField(null);
-    Alert.alert("Saved", `${field} updated successfully.`);
-    // Add API call here if needed
+  const handleSaveField = async (field: "username" | "email") => {
+    try {
+      const updatedData = field === "username" ? { username } : { email };
+
+      const response = await fetch(`${API_URL}/profile/updateInfo`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updatedData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to update profile");
+      }
+
+      setEditingField(null);
+      Alert.alert("Success", `${field} updated successfully.`);
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to update profile"
+      );
+    }
   };
 
-  const handleChangePassword = () => {
+  const handleCancelEdit = (field: "username" | "email") => {
+    if (field === "username") {
+      setUsername(originalUsername);
+    } else if (field === "email") {
+      setEmail(originalEmail);
+    }
+    setEditingField(null);
+  };
+
+  const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       Alert.alert("Error", "Please fill in all fields.");
       return;
@@ -61,19 +98,74 @@ const Setting = ({ navigation }: any) => {
       return;
     }
 
-    // Add your API call here
-    Alert.alert("Success", "Password changed successfully.");
-    setShowPasswordModal(false);
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+    try {
+      const response = await fetch(`${API_URL}/profile/change-password`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Password change failed");
+      }
+
+      Alert.alert("Success", "Password changed successfully.");
+      setShowPasswordModal(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Password change failed"
+      );
+    }
+  };
+
+  useEffect(() => {
+    fetchUserInfo();
+  }, []);
+
+  const fetchUserInfo = async () => {
+    try {
+      const response = await fetch(`${API_URL}/profile/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to fetch user info");
+      }
+
+      // Gán thông tin user vào các state
+      const { username, email, password, profileImage } = data.user;
+
+      setUsername(username || "");
+      setEmail(email || "");
+      setOriginalUsername(username || "");
+      setOriginalEmail(email || "");
+      setConfirmPassword(password || "");
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to load profile"
+      );
+    }
   };
 
   return (
     <ScrollView style={styles.container}>
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => navigation.profile()}
+        onPress={() => router.push("/profile")}
       >
         <Ionicons name="arrow-back" size={20} color="black" />
       </TouchableOpacity>
@@ -98,19 +190,20 @@ const Setting = ({ navigation }: any) => {
                 <Text style={styles.value}>{username}</Text>
               )}
             </View>
-            <TouchableOpacity
-              onPress={() =>
-                editingField === "username"
-                  ? handleSaveField("username")
-                  : setEditingField("username")
-              }
-            >
-              <Feather
-                name={editingField === "username" ? "check" : "edit-2"}
-                size={18}
-                color="black"
-              />
-            </TouchableOpacity>
+            {editingField === "username" ? (
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                <TouchableOpacity onPress={() => handleSaveField("username")}>
+                  <Feather name="check" size={18} color="black" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleCancelEdit("username")}>
+                  <Feather name="x" size={18} color="black" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity onPress={() => setEditingField("username")}>
+                <Feather name="edit-2" size={18} color="black" />
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Email */}
@@ -127,19 +220,20 @@ const Setting = ({ navigation }: any) => {
                 <Text style={styles.value}>{email}</Text>
               )}
             </View>
-            <TouchableOpacity
-              onPress={() =>
-                editingField === "email"
-                  ? handleSaveField("email")
-                  : setEditingField("email")
-              }
-            >
-              <Feather
-                name={editingField === "email" ? "check" : "edit-2"}
-                size={18}
-                color="black"
-              />
-            </TouchableOpacity>
+            {editingField === "email" ? (
+              <View style={{ flexDirection: "row", gap: 12 }}>
+                <TouchableOpacity onPress={() => handleSaveField("email")}>
+                  <Feather name="check" size={18} color="black" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleCancelEdit("email")}>
+                  <Feather name="x" size={18} color="black" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity onPress={() => setEditingField("email")}>
+                <Feather name="edit-2" size={18} color="black" />
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Change Password */}
@@ -219,15 +313,8 @@ const Setting = ({ navigation }: any) => {
       </View>
 
       {/* Logout & Delete */}
-      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-        <Text style={styles.logoutText}>LOGOUT</Text>
-        <Ionicons
-          name="log-out-outline"
-          size={20}
-          color="white"
-          style={{ marginLeft: 8 }}
-        />
-      </TouchableOpacity>
+
+      <LogoutButton />
 
       <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteAccount}>
         <Text style={styles.deleteText}>Delete account</Text>

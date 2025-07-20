@@ -193,6 +193,7 @@ const Profile = () => {
     if (!result.canceled) {
       const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
       setNewAvatar(base64Image);
+      setLoading(true);
 
       try {
         const response = await fetch(`${API_URL}/profile/avatar`, {
@@ -215,6 +216,8 @@ const Profile = () => {
           "Error",
           error instanceof Error ? error.message : "Failed to update avatar"
         );
+      } finally {
+        setLoading(false);
       }
     }
   };

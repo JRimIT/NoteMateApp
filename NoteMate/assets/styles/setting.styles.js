@@ -1,6 +1,7 @@
 import { StyleSheet } from "react-native";
+import COLORS from "../../constants/colors";
 
-export default StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#ede1d1",
@@ -113,10 +114,19 @@ export default StyleSheet.create({
     alignItems: "center",
     marginTop: 20,
   },
+  logoutButton: {
+    backgroundColor: "#e17156",
+    paddingVertical: 12,
+    borderRadius: 30,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 20,
+  },
   logoutText: {
-    color: "white",
+    color: COLORS.white,
     fontWeight: "bold",
-    fontSize: 16,
+    marginLeft: 16,
   },
   deleteBtn: {
     marginTop: 16,
@@ -194,14 +204,8 @@ export default StyleSheet.create({
     marginBottom: 12,
   },
 
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: "#333",
-    paddingVertical: 10,
-  },
-
   inputIcon: {
     marginLeft: 8,
   },
 });
+export default styles;
