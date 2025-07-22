@@ -298,7 +298,7 @@ const Home = () => {
         />
         <TouchableOpacity
           style={{
-            backgroundColor: "#ff7043",
+            backgroundColor: colors.back,
             borderRadius: 24,
             paddingVertical: 12,
             paddingHorizontal: 28,

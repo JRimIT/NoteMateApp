@@ -386,6 +386,7 @@ const Setting = ({ navigation }: any) => {
                   name={showCurrentPassword ? "eye-off-outline" : "eye-outline"}
                   size={20}
                   color={colors.primary}
+                  style={styles.inputIcon}
                 />
               </TouchableOpacity>
             </View>
@@ -405,6 +406,7 @@ const Setting = ({ navigation }: any) => {
                   name={showNewPassword ? "eye-off-outline" : "eye-outline"}
                   size={20}
                   color={colors.primary}
+                  style={styles.inputIcon}
                 />
               </TouchableOpacity>
             </View>
@@ -424,6 +426,7 @@ const Setting = ({ navigation }: any) => {
                   name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
                   size={20}
                   color={colors.primary}
+                  style={styles.inputIcon}
                 />
               </TouchableOpacity>
             </View>
