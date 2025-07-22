@@ -2,6 +2,7 @@
 import express from "express";
 import protectRoute from "../middleware/auth.middleware.js";
 import User from "../models/User.js";
+import cloudinary from "../lib/cloudinary.js";
 
 const router = express.Router();
 
@@ -18,24 +19,6 @@ router.get("/me", protectRoute, async (req, res) => {
   }
 });
 
-// PUT /profile/me - Update current user profile
-router.put("/me", protectRoute, async (req, res) => {
-  const { username, email, profileImage } = req.body;
-  try {
-    const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    user.username = username || user.username;
-    user.email = email || user.email;
-    user.profileImage = profileImage || user.profileImage;
-
-    await user.save();
-    res.json({ message: "Profile updated successfully", user });
-  } catch (error) {
-    console.error("Error updating profile:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
 // PUT /profile/change-password
 router.put("/change-password", protectRoute, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
@@ -65,6 +48,90 @@ router.put("/change-password", protectRoute, async (req, res) => {
     res.json({ message: "Password changed successfully" });
   } catch (error) {
     console.error("Error changing password:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// PUT /profile/avatar - Cập nhật ảnh đại diện
+router.put("/avatar", protectRoute, async (req, res) => {
+  const { profileImage } = req.body;
+
+  if (!profileImage || !profileImage.startsWith("data:image")) {
+    return res.status(400).json({ message: "Valid base64 image is required" });
+  }
+
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Optional: Xóa ảnh cũ trên Cloudinary nếu cần
+    if (user.profileImage?.includes("cloudinary")) {
+      try {
+        const publicId = user.profileImage.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(`avatars/${publicId}`);
+      } catch (e) {
+        console.warn("Old image deletion failed:", e.message);
+      }
+    }
+
+    // Upload ảnh mới lên Cloudinary
+    const uploadResponse = await cloudinary.uploader.upload(profileImage, {
+      folder: "avatars",
+    });
+
+    user.profileImage = uploadResponse.secure_url;
+    await user.save();
+
+    const updatedUser = await User.findById(user._id).select("-password");
+    res.json({
+      message: "Avatar updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error updating avatar:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+// PUT /profile/updateInfo - Cập nhật username,email người dùng
+router.put("/updateInfo", protectRoute, async (req, res) => {
+  const userId = req.user.id;
+  const { username, email } = req.body;
+
+  const user = await User.findByIdAndUpdate(
+    userId,
+    { username, email },
+    { new: true }
+  );
+
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  res.json({ user });
+});
+
+// DELETE /profile/delete - Xóa tài khoản người dùng
+router.delete("/delete", protectRoute, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Optional: Xóa avatar từ Cloudinary nếu có
+    if (user.profileImage?.includes("cloudinary")) {
+      try {
+        const publicId = user.profileImage.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(`avatars/${publicId}`);
+      } catch (e) {
+        console.warn("Old image deletion failed:", e.message);
+      }
+    }
+
+    await User.findByIdAndDelete(req.user._id);
+
+    res.json({ message: "Account deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting account:", error);
     res.status(500).json({ message: "Server error" });
   }
 });

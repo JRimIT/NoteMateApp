@@ -11,11 +11,12 @@ import {
 } from "react-native";
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { API_URL } from "../../constants/api";
-import styles from "../../assets/styles/setting.styles";
-import COLORS from "../../constants/colors";
 import LogoutButton from "../../components/LogoutButton";
 import { useAuthStore } from "../../store/authStore";
 import { useRouter } from "expo-router";
+import { useTheme } from "../../contexts/ThemeContext";
+import ThemePicker from "../../components/ThemePicker";
+import createSettingStyles from "../../assets/styles/setting.styles";
 
 const Setting = ({ navigation }: any) => {
   const { logout, token } = useAuthStore();
@@ -41,11 +42,46 @@ const Setting = ({ navigation }: any) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const router = useRouter();
 
-  const handleDeleteAccount = () => {
+  const { colors, theme, setTheme } = useTheme();
+  const styles = createSettingStyles(colors);
+  const [isThemeModalVisible, setThemeModalVisible] = useState(false);
+
+  const handleThemeChange = (
+    newTheme: "forest" | "retro" | "ocean" | "blossom"
+  ) => {
+    setTheme(newTheme);
+    setThemeModalVisible(false);
+  };
+
+  const handleDeleteAccount = async () => {
     Alert.alert(
       "Delete Account",
       "Are you sure you want to delete your account?",
-      [{ text: "Cancel" }, { text: "Delete", style: "destructive" }]
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const res = await fetch(`${API_URL}/profile/delete`, {
+                method: "DELETE",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+              if (!res.ok) throw new Error("Failed to delete account");
+              logout();
+              router.replace("/login");
+            } catch (error) {
+              Alert.alert(
+                "Error",
+                error instanceof Error ? error.message : "Something went wrong"
+              );
+            }
+          },
+        },
+      ]
     );
   };
 
@@ -254,7 +290,7 @@ const Setting = ({ navigation }: any) => {
           <Switch
             value={offlineMode}
             onValueChange={setOfflineMode}
-            trackColor={{ true: "#e17156", false: "#ccc" }}
+            trackColor={{ true: colors.primary, false: colors.placeholderText }}
             thumbColor="#fff"
           />
         </View>
@@ -269,7 +305,10 @@ const Setting = ({ navigation }: any) => {
             <Switch
               value={pushNotification}
               onValueChange={setPushNotification}
-              trackColor={{ true: "#e17156", false: "#ccc" }}
+              trackColor={{
+                true: colors.primary,
+                false: colors.placeholderText,
+              }}
               thumbColor="#fff"
             />
           </View>
@@ -278,38 +317,44 @@ const Setting = ({ navigation }: any) => {
             <Switch
               value={soundEffects}
               onValueChange={setSoundEffects}
-              trackColor={{ true: "#e17156", false: "#ccc" }}
+              trackColor={{
+                true: colors.primary,
+                false: colors.placeholderText,
+              }}
               thumbColor="#fff"
             />
           </View>
         </View>
       </View>
 
-      {/* Appearance */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Appearance</Text>
-        <View style={styles.cardRow}>
-          <Text style={styles.value}>Theme</Text>
-          <MaterialCommunityIcons name="palette" size={24} color="#e17156" />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        {/* Appearance */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            Appearance
+          </Text>
+          <TouchableOpacity
+            style={styles.cardRow}
+            onPress={() => setThemeModalVisible(true)}
+          >
+            <Text style={[styles.value, { color: colors.textSecondary }]}>
+              Theme
+            </Text>
+            <MaterialCommunityIcons
+              name="palette"
+              size={24}
+              color={colors.primary}
+            />
+          </TouchableOpacity>
         </View>
-      </View>
 
-      {/* About */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About</Text>
-        <View style={styles.card}>
-          {[
-            "Privacy Policy",
-            "Terms of Services",
-            "Open Source Licenses",
-            "Help Center",
-          ].map((item, index) => (
-            <View style={styles.rowBetween} key={index}>
-              <Text style={styles.value}>{item}</Text>
-              <Ionicons name="chevron-forward" size={18} color="black" />
-            </View>
-          ))}
-        </View>
+        {/* Modal chọn theme */}
+        <ThemePicker
+          visible={isThemeModalVisible}
+          onClose={() => setThemeModalVisible(false)}
+          selectedTheme={theme}
+          onSelectTheme={handleThemeChange as (theme: string) => void}
+        />
       </View>
 
       {/* Logout & Delete */}
@@ -335,12 +380,12 @@ const Setting = ({ navigation }: any) => {
               />
               <TouchableOpacity
                 onPress={() => setShowCurrentPassword(!showCurrentPassword)}
+                style={styles.eyeIcon}
               >
                 <Ionicons
                   name={showCurrentPassword ? "eye-off-outline" : "eye-outline"}
                   size={20}
-                  color={COLORS.primary}
-                  style={styles.inputIcon}
+                  color={colors.primary}
                 />
               </TouchableOpacity>
             </View>
@@ -354,12 +399,12 @@ const Setting = ({ navigation }: any) => {
               />
               <TouchableOpacity
                 onPress={() => setShowNewPassword(!showNewPassword)}
+                style={styles.eyeIcon}
               >
                 <Ionicons
                   name={showNewPassword ? "eye-off-outline" : "eye-outline"}
                   size={20}
-                  color={COLORS.primary}
-                  style={styles.inputIcon}
+                  color={colors.primary}
                 />
               </TouchableOpacity>
             </View>
@@ -373,12 +418,12 @@ const Setting = ({ navigation }: any) => {
               />
               <TouchableOpacity
                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                style={styles.eyeIcon}
               >
                 <Ionicons
                   name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
                   size={20}
-                  color={COLORS.primary}
-                  style={styles.inputIcon}
+                  color={colors.primary}
                 />
               </TouchableOpacity>
             </View>

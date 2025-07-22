@@ -2,10 +2,13 @@ import { View, Text, TouchableOpacity, Alert } from "react-native";
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuthStore } from "../store/authStore";
-import COLORS from "../constants/colors";
-import styles from "../assets/styles/profile.styles";
+import { useTheme } from "../../NoteMate/contexts/ThemeContext";
+import createProfileStyles from "../assets/styles/profile.styles";
 
 const LogoutButton = () => {
+  const { colors } = useTheme();
+  const styles = createProfileStyles(colors);
+
   const { logout } = useAuthStore();
 
   const confirmLogout = () => {
@@ -28,7 +31,7 @@ const LogoutButton = () => {
       <Ionicons
         name="log-out-outline"
         size={20}
-        color={COLORS.white}
+        color={colors.white}
         style={{ marginLeft: 8 }}
       />
     </TouchableOpacity>

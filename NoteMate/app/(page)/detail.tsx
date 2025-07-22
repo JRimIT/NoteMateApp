@@ -13,8 +13,7 @@ import {
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
-import styles from "../../assets/styles/home.styles";
-import COLORS from "../../constants/colors";
+import { useTheme } from "../../contexts/ThemeContext";
 import axios from "axios";
 import * as ImagePicker from "expo-image-picker";
 import Loader from "../../components/Loader";
@@ -22,8 +21,12 @@ import { API_URL } from "../../constants/api";
 import { useAuthStore } from "../../store/authStore";
 import { useFocusEffect } from "@react-navigation/native";
 import { debounce } from "lodash";
+import createDetailStyles from "../../assets/styles/detail.styles";
 
 const Detail = () => {
+  const { colors, theme, setTheme } = useTheme();
+  // const styles = createHomeStyles(colors);
+  const styles = createDetailStyles(colors);
   const { id } = useLocalSearchParams();
   const { token } = useAuthStore();
   const [note, setNote] = useState("");
@@ -137,23 +140,23 @@ const Detail = () => {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.container}>
-          <View style={style.header}>
+          <View style={styles.header}>
             <TouchableOpacity
-              style={style.buttonSubmit}
+              style={styles.buttonSubmit}
               onPress={() => router.back()}
             >
-              <Text style={style.headerTitle}>Back</Text>
+              <Text style={styles.headerTitle}>Back</Text>
             </TouchableOpacity>
 
             <Text style={styles.headerTitle}>Book Note</Text>
           </View>
 
-          <View style={style.bookCard}>
+          <View style={styles.bookCard}>
             {loading ? (
-              <ActivityIndicator size="large" color={COLORS.primary} />
+              <ActivityIndicator size="large" color={colors.primary} />
             ) : (
               <TextInput
-                style={style.input}
+                style={styles.input}
                 multiline
                 placeholder="Enter your text here..."
                 textAlignVertical="top"
@@ -163,8 +166,8 @@ const Detail = () => {
             )}
           </View>
 
-          <View style={style.footer}>
-            <TouchableOpacity style={style.AIbutton} onPress={pickImage}>
+          <View style={styles.footer}>
+            <TouchableOpacity style={styles.AIbutton} onPress={pickImage}>
               <Image
                 source={require("../../assets/images/i.png")}
                 style={{ width: 30, height: 30, resizeMode: "contain" }}
@@ -176,7 +179,7 @@ const Detail = () => {
           <TouchableOpacity
             style={{
               marginTop: 16,
-              backgroundColor: "#ff7043",
+              backgroundColor: colors.primary,
               padding: 12,
               borderRadius: 8,
               alignItems: "center",
@@ -191,79 +194,78 @@ const Detail = () => {
   );
 };
 
-const style = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-    padding: 16,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    textAlignVertical: "top",
-    minHeight: 300,
-  },
-  AIbutton: {
-    backgroundColor: "#F9A065",
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    width: 120,
-    padding: 10,
-    borderRadius: 10,
-  },
-  bookCard: {
-    flex: 100,
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: 16,
-    marginBottom: 20,
-    padding: 10,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  footer: {
-    flex: 1,
-    backgroundColor: "#FFCEAE",
-    borderRadius: 16,
-    marginBottom: 20,
-    padding: 16,
-    shadowColor: COLORS.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  header: {
-    marginBottom: 10,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 10,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontFamily: "JetBrainsMono-Medium",
-    letterSpacing: 0.5,
-    color: COLORS.white,
-    marginBottom: 8,
-  },
-  buttonSubmit: {
-    backgroundColor: "#FF7A20",
-    justifyContent: "center",
-    alignItems: "center",
-    height: 35,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-  },
-});
+// const style = StyleSheet.create({//HERE
+//     flex: 1,
+//     backgroundColor: colors.placeholderText,
+//     padding: 16,
+//   },
+//   input: {
+//     flex: 1,
+//     fontSize: 16,
+//     textAlignVertical: "top",
+//     minHeight: 300,
+//   },
+//   AIbutton: {
+//     backgroundColor: colors.primary,
+//     display: "flex",
+//     flexDirection: "row",
+//     justifyContent: "center",
+//     alignItems: "center",
+//     width: 120,
+//     padding: 10,
+//     borderRadius: 10,
+//   },
+//   bookCard: {
+//     flex: 100,
+//     backgroundColor: colors.cardBackground,
+//     borderRadius: 16,
+//     marginBottom: 20,
+//     padding: 10,
+//     shadowColor: colors.black,
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.1,
+//     shadowRadius: 8,
+//     elevation: 3,
+//     borderWidth: 1,
+//     borderColor: colors.border,
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+//   footer: {
+//     flex: 1,
+//     backgroundColor: colors.inputBackground,
+//     borderRadius: 16,
+//     marginBottom: 20,
+//     padding: 16,
+//     shadowColor: colors.black,
+//     shadowOffset: { width: 0, height: 2 },
+//     shadowOpacity: 0.1,
+//     shadowRadius: 8,
+//     elevation: 3,
+//     borderWidth: 1,
+//     borderColor: colors.border,
+//   },
+//   header: {
+//     marginBottom: 10,
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     padding: 10,
+//   },
+//   headerTitle: {
+//     fontSize: 24,
+//     fontFamily: "JetBrainsMono-Medium",
+//     letterSpacing: 0.5,
+//     color: colors.white,
+//     marginBottom: 8,
+//   },
+//   buttonSubmit: {
+//     backgroundColor: "#FF7A20",
+//     justifyContent: "center",
+//     alignItems: "center",
+//     height: 35,
+//     paddingHorizontal: 10,
+//     borderRadius: 10,
+//   },
+// });
 
 export default Detail;

@@ -15,10 +15,10 @@ import * as ImagePicker from "expo-image-picker";
 
 import { useAuthStore } from "../../store/authStore";
 import { API_URL } from "../../constants/api";
-import COLORS from "../../constants/colors";
-import styles from "../../assets/styles/profile.styles";
 import Loader from "../../components/Loader";
 import LogoutButton from "../../components/LogoutButton";
+import { useTheme } from "../../contexts/ThemeContext";
+import createProfileStyles from "../../assets/styles/profile.styles";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -36,6 +36,8 @@ const Profile = () => {
     averageRating: 0,
     latestTitle: "",
   });
+  const { colors, theme, setTheme } = useTheme();
+  const styles = createProfileStyles(colors);
 
   const router = useRouter();
 
@@ -129,7 +131,7 @@ const Profile = () => {
           key={i}
           name={i < rating ? "star" : "star-outline"}
           size={22}
-          color={i < rating ? "#f4b400" : COLORS.textSecondary}
+          color={i < rating ? "#f4b400" : colors.textSecondary}
         />
       ))}
     </View>
@@ -240,9 +242,9 @@ const Profile = () => {
         onPress={() => confirmDelete(item._id)}
       >
         {deleteBookId === item._id ? (
-          <ActivityIndicator size="small" color={COLORS.primary} />
+          <ActivityIndicator size="small" color={colors.primary} />
         ) : (
-          <Ionicons name="trash-outline" size={24} color={COLORS.primary} />
+          <Ionicons name="trash-outline" size={24} color={colors.primary} />
         )}
       </TouchableOpacity>
     </View>
@@ -259,7 +261,7 @@ const Profile = () => {
           <Ionicons
             name="person-circle-outline"
             size={70}
-            color={COLORS.primary}
+            color={colors.primary}
           />
         )}
         <View>
@@ -277,14 +279,14 @@ const Profile = () => {
           onPress={handlePickAvatar}
           style={{ marginLeft: 10, bottom: 20 }}
         >
-          <Ionicons name="image-outline" size={24} color={COLORS.primary} />
+          <Ionicons name="image-outline" size={24} color={colors.primary} />
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={() => router.push("/setting")}
           style={{ marginLeft: 10, bottom: 20 }}
         >
-          <Ionicons name="settings-outline" size={24} color={COLORS.primary} />
+          <Ionicons name="settings-outline" size={24} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
@@ -305,8 +307,8 @@ const Profile = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            colors={[COLORS.primary]}
-            tintColor={COLORS.primary}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
           />
         }
         ListEmptyComponent={
@@ -314,14 +316,14 @@ const Profile = () => {
             <Ionicons
               name="book-outline"
               size={50}
-              color={COLORS.textSecondary}
+              color={colors.textSecondary}
             />
             <Text style={styles.emptyText}>No books found</Text>
             <TouchableOpacity
               style={styles.addButton}
               onPress={() => router.push("/create")}
             >
-              <Ionicons name="add" size={24} color={COLORS.white} />
+              <Ionicons name="add" size={24} color={colors.white} />
               <Text style={styles.addButtonText}>Add Book</Text>
             </TouchableOpacity>
           </View>

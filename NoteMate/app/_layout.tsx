@@ -5,6 +5,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useFonts } from "expo-font";
 import { useAuthStore } from "../store/authStore";
 import SafeScreen from "../components/SafeScreen";
+import { ThemeProvider } from "../contexts/ThemeContext";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -35,7 +36,6 @@ export default function RootLayout() {
 
     const inAuthGroup = segments[0] === "(auth)";
     console.log("inAuthGroup: ", segments[0]);
-    
 
     if (!user && !token && !inAuthGroup) {
       router.replace("/(auth)");
@@ -45,14 +45,16 @@ export default function RootLayout() {
   }, [user, token, segments, isLoading, isReady]);
 
   return (
-    <SafeAreaProvider>
-      <SafeScreen>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="(auth)" />
-        </Stack>
-      </SafeScreen>
-      <StatusBar style="dark" />
-    </SafeAreaProvider>
+    <ThemeProvider>
+      <SafeAreaProvider>
+        <SafeScreen>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="(auth)" />
+          </Stack>
+        </SafeScreen>
+        <StatusBar style="dark" />
+      </SafeAreaProvider>
+    </ThemeProvider>
   );
 }

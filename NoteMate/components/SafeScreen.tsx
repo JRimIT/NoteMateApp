@@ -1,23 +1,20 @@
-import { View, Text, StyleSheet } from 'react-native'
-import React, { use } from 'react'
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import  COLOR  from '../constants/colors';
+import { View, Text, StyleSheet } from "react-native";
+import React, { use } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "../../NoteMate/contexts/ThemeContext";
+import createProfileStyles from "../assets/styles/profile.styles";
 
-const SafeScreen = ({children} : any) => {
+const SafeScreen = ({ children }: any) => {
+  const { colors } = useTheme();
+  const styles = createProfileStyles(colors);
+
   const insets = useSafeAreaInsets();
-  
-    return (
+
+  return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {children}
     </View>
-  )
-}
+  );
+};
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-     backgroundColor: COLOR.background
-  }
-});
-
-export default SafeScreen
+export default SafeScreen;
