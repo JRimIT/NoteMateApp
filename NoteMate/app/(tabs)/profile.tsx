@@ -237,16 +237,24 @@ const Profile = () => {
           {new Date(item.createdAt).toLocaleDateString()}
         </Text>
       </View>
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => confirmDelete(item._id)}
-      >
-        {deleteBookId === item._id ? (
-          <ActivityIndicator size="small" color={colors.primary} />
-        ) : (
-          <Ionicons name="trash-outline" size={24} color={colors.primary} />
-        )}
-      </TouchableOpacity>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => confirmDelete(item._id)}
+        >
+          {deleteBookId === item._id ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <Ionicons name="trash-outline" size={24} color={colors.primary} />
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.deleteButton, { marginLeft: 8 }]}
+          onPress={() => router.push({ pathname: 'edit', params: { id: item._id } })}
+        >
+          <Ionicons name="pencil-outline" size={24} color={colors.primary} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -255,41 +263,38 @@ const Profile = () => {
   return (
     <View style={styles.container}>
       <View style={styles.profileHeader}>
-        {newAvatar ? (
-          <Image source={{ uri: newAvatar }} style={styles.avatar} />
-        ) : (
-          <Ionicons
-            name="person-circle-outline"
-            size={70}
-            color={colors.primary}
-          />
-        )}
-        <View>
+        {/* Avatar and buttons in a vertical column */}
+        <View style={{ alignItems: 'center', marginRight: 16 }}>
+          {newAvatar ? (
+            <Image source={{ uri: newAvatar }} style={styles.avatar} />
+          ) : (
+            <Ionicons
+              name="person-circle-outline"
+              size={70}
+              color={colors.primary}
+            />
+          )}
+          {/* Two buttons in a horizontal row below avatar */}
+          <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 8, gap: 12 }}>
+            <TouchableOpacity onPress={handlePickAvatar}>
+              <Ionicons name="image-outline" size={24} color={colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push("/setting") }>
+              <Ionicons name="settings-outline" size={24} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+        </View>
+        {/* User info in a separate column */}
+        <View style={{ flex: 1, justifyContent: 'center' }}>
           <Text style={styles.username}>{userInfo?.username}</Text>
           <Text style={styles.email}>{userInfo?.email}</Text>
-
           <View style={{ marginTop: 8 }}>
             <Text style={styles.statsText}>📚 Total: {stats.total}</Text>
             <Text style={styles.statsText}>⭐ Avg: {stats.averageRating}</Text>
             <Text style={styles.statsText}>🆕 Newest: {stats.latestTitle}</Text>
           </View>
         </View>
-
-        <TouchableOpacity
-          onPress={handlePickAvatar}
-          style={{ marginLeft: 10, bottom: 20 }}
-        >
-          <Ionicons name="image-outline" size={24} color={colors.primary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => router.push("/setting")}
-          style={{ marginLeft: 10, bottom: 20 }}
-        >
-          <Ionicons name="settings-outline" size={24} color={colors.primary} />
-        </TouchableOpacity>
       </View>
-
       <LogoutButton />
 
       <View style={styles.booksHeader}>

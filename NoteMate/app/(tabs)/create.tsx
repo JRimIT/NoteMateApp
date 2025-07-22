@@ -219,10 +219,12 @@ const Create = () => {
               </View>
             </View>
             {/* Rating */}
-            <View style={styles.ratingContainer}>
+            <View style={styles.formGroup}>
               <Text style={styles.label}>Rating</Text>
               <View style={styles.inputContainer}>
-                {renderRatingPicker(rating)}
+                <View style={styles.ratingContainer}>
+                  {renderRatingPicker(rating)}
+                </View>
               </View>
             </View>
 

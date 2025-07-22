@@ -81,13 +81,9 @@ const createStyles = (colors: ThemeType) =>
     },
     ratingContainer: {
       flexDirection: "row",
-      justifyContent: "space-around",
       alignItems: "center",
-      backgroundColor: colors.inputBackground,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-      padding: 8,
+      justifyContent: "center",
+      // Removed border, backgroundColor, and padding for clean centering
     },
     starButton: {
       padding: 8,
