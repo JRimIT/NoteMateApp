@@ -9,7 +9,7 @@ import {
   RefreshControl,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 
@@ -41,9 +41,11 @@ const Profile = () => {
 
   const router = useRouter();
 
-  useEffect(() => {
-    fetchAllData();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchAllData();
+    }, [])
+  );
 
   const fetchAllData = async () => {
     try {
