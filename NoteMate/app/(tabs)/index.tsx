@@ -50,6 +50,14 @@ const Home = () => {
     fetchBooks();
   }, []);
 
+  useEffect(() => {
+    if (searchText === "") {
+      setResults([]);
+      setSearching(false);
+      fetchBooks(1, true); // Fetch lại danh sách gốc khi xóa search
+    }
+  }, [searchText]);
+
   useFocusEffect(
     React.useCallback(() => {
       fetchFavorites();
@@ -292,7 +300,13 @@ const Home = () => {
           placeholder="🔍 Tìm kiếm ghi chú/sách..."
           placeholderTextColor="#888"
           value={query}
-          onChangeText={setQuery}
+          onChangeText={(text) => {
+            setQuery(text);
+            if (text === "") {
+              setSearchText("");
+              setResults([]);
+            }
+          }}
           onSubmitEditing={handleSearch}
           returnKeyType="search"
         />
@@ -325,101 +339,48 @@ const Home = () => {
           </Text>
         </TouchableOpacity>
       </View>
-      {/* Nếu có searchText thì hiển thị kết quả tìm kiếm */}
-      {searchText ? (
-        searching ? (
-          <ActivityIndicator style={{ marginTop: 20 }} />
-        ) : (
-          <FlatList
-            data={results as any[]}
-            keyExtractor={(item: any) => item._id}
-            renderItem={({ item }: { item: any }) => (
-              <TouchableOpacity
-                onPress={() => handleDetailPress(item._id)}
-                style={styles.bookCard}
-              >
-                <View style={styles.bookHeader}>
-                  <View style={styles.userInfo}>
-                    <Image
-                      source={{ uri: item.user.profileImage }}
-                      style={styles.avatar}
-                    />
-                    <Text style={styles.username}>{item.user.username}</Text>
-                  </View>
-                </View>
-                <View style={styles.bookImageContainer}>
-                  <Image
-                    source={{ uri: item.image }}
-                    style={styles.bookImage}
-                  />
-                </View>
-                <View style={styles.bookDetails}>
-                  <Text style={styles.bookTitle}>{item.title}</Text>
-                  <View style={styles.ratingContainer}>
-                    {renderRatingStars(item.rating)}
-                  </View>
-                  <Text style={styles.caption}>{item.caption}</Text>
-                  <Text style={styles.date}>
-                    Shared on {formatPublishDate(item.createdAt)}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            )}
-            ListEmptyComponent={
-              <Text style={{ marginTop: 20 }}>Không có kết quả</Text>
-            }
-          />
-        )
-      ) : (
-        // Nếu không có searchText thì hiển thị danh sách books mặc định
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: 12,
-            marginTop: 4,
-          }}
-        >
-          <TouchableOpacity
-            onPress={() => setShowFavoritesOnly(!showFavoritesOnly)}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              paddingVertical: 6,
-              paddingHorizontal: 14,
-              borderRadius: 20,
-              backgroundColor: showFavoritesOnly ? "#ffeaea" : "#f0f0f0",
-              borderWidth: 1,
-              borderColor: showFavoritesOnly ? "#e53935" : "#ccc",
-              marginRight: 8,
-            }}
-            activeOpacity={0.8}
-          >
-            <Ionicons
-              name={showFavoritesOnly ? "heart" : "heart-outline"}
-              size={20}
-              color={showFavoritesOnly ? "#e53935" : "#888"}
-            />
-            <Text
-              style={{
-                marginLeft: 8,
-                color: showFavoritesOnly ? "#e53935" : "#333",
-                fontWeight: "bold",
-              }}
-            >
-              {showFavoritesOnly ? "Chỉ yêu thích" : "Tất cả sách"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      {/* Chỉ render một FlatList duy nhất cho cả search và danh sách gốc */}
       <FlatList
         data={
-          showFavoritesOnly
-            ? books.filter((b) => favorites.includes(b._id))
-            : books
+          searchText
+            ? results
+            : showFavoritesOnly
+              ? books.filter((b) => favorites.includes(b._id))
+              : books
         }
         keyExtractor={(item: any) => item._id}
-        renderItem={renderItem}
+        renderItem={searchText ? ({ item }: any) => (
+          <TouchableOpacity
+            onPress={() => handleDetailPress(item._id)}
+            style={styles.bookCard}
+          >
+            <View style={styles.bookHeader}>
+              <View style={styles.userInfo}>
+                <Image
+                  source={{ uri: item.user.profileImage }}
+                  style={styles.avatar}
+                />
+                <Text style={styles.username}>{item.user.username}</Text>
+              </View>
+            </View>
+            <View style={styles.bookImageContainer}>
+              <Image
+                source={{ uri: item.image }}
+                style={styles.bookImage}
+              />
+            </View>
+            <View style={styles.bookDetails}>
+              <Text style={styles.bookTitle}>{item.title}</Text>
+              <View style={styles.ratingContainer}>
+                {renderRatingStars(item.rating)}
+              </View>
+              <Text style={styles.caption}>{item.caption}</Text>
+              <Text style={styles.date}>
+                Shared on {formatPublishDate(item.createdAt)}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        ) : renderItem}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -433,32 +394,38 @@ const Home = () => {
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         ListHeaderComponent={
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>Book Note</Text>
-            <Text style={styles.headerSubtitle}>Note it. Mate it. Done.</Text>
-          </View>
+          searchText ? null : (
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>Book Note</Text>
+              <Text style={styles.headerSubtitle}>Note it. Mate it. Done.</Text>
+            </View>
+          )
         }
         ListFooterComponent={
-          hasMore && books.length > 0 ? (
+          searchText ? null : (hasMore && books.length > 0 ? (
             <ActivityIndicator
               style={styles.footerLoader}
               size="large"
               color={colors.primary}
             />
-          ) : null
+          ) : null)
         }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons
-              name="book-outline"
-              size={64}
-              color={colors.textSecondary}
-            />
-            <Text style={styles.emptyText}>No books found</Text>
-            <Text style={styles.emptySubtext}>
-              Start sharing your favorite books!
-            </Text>
-          </View>
+          searchText ? (
+            <Text style={{ marginTop: 20 }}>Không có kết quả</Text>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Ionicons
+                name="book-outline"
+                size={64}
+                color={colors.textSecondary}
+              />
+              <Text style={styles.emptyText}>No books found</Text>
+              <Text style={styles.emptySubtext}>
+                Start sharing your favorite books!
+              </Text>
+            </View>
+          )
         }
       />
     </View>
