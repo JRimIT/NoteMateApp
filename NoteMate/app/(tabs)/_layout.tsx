@@ -4,26 +4,29 @@ import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import COLORS from "../../constants/colors";
-
+import { useTheme } from "../../contexts/ThemeContext";
+import createProfileStyles from "../../assets/styles/profile.styles";
 const TabLayout = () => {
+  const { colors } = useTheme();
+  const styles = createProfileStyles(colors);
+
   const insets = useSafeAreaInsets();
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: COLORS.primary,
+        tabBarActiveTintColor: colors.primary,
         headerTitleStyle: {
-          color: COLORS.textPrimary,
+          color: colors.textPrimary,
           fontWeight: "600",
         },
         headerShadowVisible: false,
 
         tabBarStyle: {
-          backgroundColor: COLORS.cardBackground,
+          backgroundColor: colors.cardBackground,
           borderTopWidth: 1,
-          borderTopColor: COLORS.border,
+          borderTopColor: colors.border,
           paddingTop: 5,
           paddingBottom: insets.bottom, // Add padding for bottom safe area
           height: 60 + insets.bottom, // Adjust height to include bottom safe area
