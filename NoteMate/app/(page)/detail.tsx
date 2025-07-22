@@ -22,6 +22,7 @@ import { useAuthStore } from "../../store/authStore";
 import { useFocusEffect } from "@react-navigation/native";
 import { debounce } from "lodash";
 import createDetailStyles from "../../assets/styles/detail.styles";
+import { AntDesign } from '@expo/vector-icons';
 
 const Detail = () => {
   const { colors, theme, setTheme } = useTheme();
@@ -175,21 +176,9 @@ const Detail = () => {
               <Text style={{ marginTop: 5 }}>NOTE AI</Text>
             </TouchableOpacity>
           </View>
-
-          <TouchableOpacity
-            style={{
-              marginTop: 16,
-              backgroundColor: colors.primary,
-              padding: 12,
-              borderRadius: 8,
-              alignItems: "center",
-            }}
-            onPress={() => router.push({ pathname: "edit", params: { id } })}
-          >
-            <Text style={{ color: "#fff", fontWeight: "bold" }}>Chỉnh sửa</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
+      {/* Remove the Floating Action Button (FAB) for Edit */}
     </KeyboardAvoidingView>
   );
 };
